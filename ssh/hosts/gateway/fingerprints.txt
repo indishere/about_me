@@ -1,2 +1,0 @@
-256 SHA256:llBYcGP63hUqUiDvlFblbCPGepIl7IxptQ90r2ZC6vc root@gateway (ED25519)
-4096 SHA256:Y6MgjcqwS2hmDpPH0JK2wzAllOWiJuhYl9csNze3GXM root@gateway (RSA)

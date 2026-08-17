@@ -1,3 +1,0 @@
-256 SHA256:TDqzwmFDT/pq4mDiKSMYYfnSJvvdRegmKALiO6msBtI system@winvm (ED25519)
-3072 SHA256:2cTSSvyq7LJmbMi5r1RjSaZ7OkN0lIHbhN+W26lhdu8 system@winvm (RSA)
-256 SHA256:eP6rP41C+V2qyvRZsLCM7nJYKgz85hlkJU8dTsZixYo system@winvm (ECDSA)
