@@ -23,9 +23,9 @@ device in.
 | file | key comment | what it is |
 |---|---|---|
 | `main-pc.pub` | `main-pc@hackthe.world` | main-pc's user key |
-| `linux-server.pub` | `linux-server-deploy` | read-only deploy key for pulling `hackthe-world/devices` |
+| `server.pub` | `linux-server-deploy` | read-only deploy key for pulling `hackthe-world/devices` |
 | `gateway.pub` | `gateway-deploy` | same idea, on the gateway |
-| `winvm.pub` | `winvm` | the Windows guest's user key |
+| `win-vm.pub` | `winvm` | the Windows guest's user key |
 
 ## hosts/
 
@@ -47,7 +47,7 @@ To trust a host up front instead of being prompted, append it to known_hosts
 under the name you actually connect to:
 
 ```sh
-printf '%s %s\n' <hostname> "$(cat hosts/linux-server.pub)" >> ~/.ssh/known_hosts
+printf '%s %s\n' <hostname> "$(cat hosts/server.pub)" >> ~/.ssh/known_hosts
 ```
 
 Only the ed25519 host key is published. Every one of these hosts also has RSA
@@ -58,8 +58,8 @@ and pinning one good key beats maintaining three.
 
 | host | host keys | user keys |
 |---|---|---|
-| `gateway`, `linux-server` | `/etc/ssh/` | `~/.ssh/` |
-| `main-pc`, `winvm` | `C:\ProgramData\ssh\` | `~/.ssh/` |
+| `gateway`, `server` | `/etc/ssh/` | `~/.ssh/` |
+| `main-pc`, `win-vm` | `C:\ProgramData\ssh\` | `~/.ssh/` |
 
 On Windows the host keys **must stay** in `C:\ProgramData\ssh\`: sshd runs as a
 service and reads them from there, under ACLs that only SYSTEM and
@@ -72,9 +72,21 @@ Two consequences worth knowing:
   disk, because that ACL blocks even reading the file as the logged-in user.
   `ssh-keyscan` does not carry the comment field, so that key has no trailing
   comment. It is the same key.
-- `winvm` is a rebuildable VM. Reinstalling it generates **new** host keys, so
-  `hosts/winvm.pub` has to be refreshed whenever that happens — and old
+- `win-vm` is a rebuildable VM. Reinstalling it generates **new** host keys, so
+  `hosts/win-vm.pub` has to be refreshed whenever that happens — and old
   `known_hosts` entries for it will correctly start complaining.
 
-`linux-pc` and `phone` are in the device inventory but not built yet, so they
+`moms-laptop` and `phone` are in the device inventory but not built yet, so they
 have no keys to publish.
+
+## Filenames are the device name; embedded comments may lag
+
+The filename is authoritative — it is the device's current name. The trailing
+comment *inside* a `.pub` is whatever `ssh-keygen` stamped when the key was
+generated, so after a device rename it still reads the old one:
+`hosts/server.pub` says `root@linux-server`, and `win-vm.pub` says `system@winvm`.
+
+That is cosmetic and deliberately left alone. The comment is not part of the
+key, nothing verifies against it, and rewriting a live host key file to correct
+a string is a good way to leave a headless box with an sshd that will not start.
+It corrects itself whenever a key is legitimately regenerated.
