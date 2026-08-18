@@ -41,7 +41,7 @@ Every key in the first six rows is authorised on **every** host in the fleet —
 main-pc, server, win-vm and gateway — so any machine reaches any other. The
 grants live in `nixos/*/configuration.nix` (`meshKeys`) for the Linux boxes,
 `~/.ssh/authorized_keys` on main-pc, and
-`C:\ProgramData\sshdministrators_authorized_keys` on win-vm.
+`C:\ProgramData\ssh\administrators_authorized_keys` on win-vm.
 
 ## hosts/
 
