@@ -43,6 +43,31 @@ grants live in `nixos/*/configuration.nix` (`meshKeys`) for the Linux boxes,
 `~/.ssh/authorized_keys` on main-pc, and
 `C:\ProgramData\ssh\administrators_authorized_keys` on win-vm.
 
+### `router.pub` is not one of IND's devices
+
+It is the gateway's own identity for the second hop of
+`ssh <device>@hackthe.world`. The private half lives at
+`gateway:/etc/ssh/router_ed25519`, mode `0640 root:ssh-router`, readable by the
+four router accounts — so it is the one key here whose private half is readable
+by something other than a single administrator.
+
+That is exactly why it is separate from `gateway.pub` rather than reusing it.
+The two grants differ deliberately:
+
+| | authorised on |
+|---|---|
+| `gateway.pub` | root on main-pc, server, win-vm |
+| `router.pub` | **`hacktheworld` on server (never root)**, plus both Windows boxes |
+
+It is also **not** authorised for root on the gateway itself. The gateway is
+where it is stored, so a loop back to root there would erase the whole point of
+it being the weaker key. Revoking it stops routing and leaves admin access
+alone, which is the property worth having.
+
+If the gateway is ever reinstalled, `router.nix` generates a *new* key and every
+route fails at once with `Permission denied (publickey)`. Replace this file with
+the new public half and re-grant it on the three targets.
+
 ## hosts/
 
 The keys that answer "is this the real box?" when ssh shows an unknown-host
