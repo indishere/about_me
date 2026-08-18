@@ -22,10 +22,26 @@ device in.
 
 | file | key comment | what it is |
 |---|---|---|
-| `main-pc.pub` | `main-pc@hackthe.world` | main-pc's user key |
-| `server.pub` | `linux-server-deploy` | read-only deploy key for pulling `hackthe-world/devices` |
-| `gateway.pub` | `gateway-deploy` | same idea, on the gateway |
-| `win-vm.pub` | `winvm` | the Windows guest's user key |
+| `main-pc.pub` | `main-pc@hackthe.world` | main-pc's login key |
+| `server.pub` | `server@hackthe.world` | server's login key (user `hacktheworld`) |
+| `gateway.pub` | `gateway@hackthe.world` | gateway's login key (user `root`) |
+| `win-vm.pub` | `win-vm@hackthe.world` | the Windows guest's login key |
+| `phone.pub` | `phone@hackthe.world` | IND's phone |
+| `phone-biometric.pub` | `phone-biometric@hackthe.world` | the same phone, biometric-gated (ECDSA) |
+| `server-deploy.pub` | `linux-server-deploy` | read-only deploy key for pulling `hackthe-world/devices` |
+| `gateway-deploy.pub` | `gateway-deploy` | same idea, on the gateway |
+
+**Login keys and deploy keys are separate on purpose.** The `*-deploy.pub` pair
+exist to pull one private repo read-only and nothing else. Reusing a repo-scoped
+credential as a general login credential turns a narrow key into a broad one for
+no gain, so `server` and `gateway` each got a second, dedicated login key rather
+than promoting the deploy key they already had.
+
+Every key in the first six rows is authorised on **every** host in the fleet —
+main-pc, server, win-vm and gateway — so any machine reaches any other. The
+grants live in `nixos/*/configuration.nix` (`meshKeys`) for the Linux boxes,
+`~/.ssh/authorized_keys` on main-pc, and
+`C:\ProgramData\sshdministrators_authorized_keys` on win-vm.
 
 ## hosts/
 
@@ -84,7 +100,9 @@ have no keys to publish.
 The filename is authoritative — it is the device's current name. The trailing
 comment *inside* a `.pub` is whatever `ssh-keygen` stamped when the key was
 generated, so after a device rename it still reads the old one:
-`hosts/server.pub` says `root@linux-server`, and `win-vm.pub` says `system@winvm`.
+`hosts/server.pub` says `root@linux-server`, and `hosts/win-vm.pub` says
+`system@winvm`. The *identity* keys no longer lag: win-vm's was regenerated on
+2026-08-18 and carries the current name.
 
 That is cosmetic and deliberately left alone. The comment is not part of the
 key, nothing verifies against it, and rewriting a live host key file to correct
