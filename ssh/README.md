@@ -29,7 +29,7 @@ device in.
 | `phone.pub` | `phone@hackthe.world` | IND's phone |
 | `phone-biometric.pub` | `phone-biometric@hackthe.world` | the same phone, biometric-gated (ECDSA) |
 | `server-deploy.pub` | `linux-server-deploy` | read-only deploy key for pulling `hackthe-world/devices` |
-| `gateway-deploy.pub` | `gateway-deploy` | same idea, on the gateway |
+| `gateway-deploy.pub` | `gateway-deploy@hackthe.world` | same idea, on the gateway |
 
 **Login keys and deploy keys are separate on purpose.** The `*-deploy.pub` pair
 exist to pull one private repo read-only and nothing else. Reusing a repo-scoped
@@ -66,7 +66,26 @@ alone, which is the property worth having.
 
 If the gateway is ever reinstalled, `router.nix` generates a *new* key and every
 route fails at once with `Permission denied (publickey)`. Replace this file with
-the new public half and re-grant it on the three targets.
+the new public half and re-grant it on the targets.
+
+**That happened on 2026-09-04**, and it is worth reading as a worked example
+rather than a warning. The gateway moved from Sucura to TNAHosting after the old
+provider stopped routing its `/24`, and a reinstall regenerates *everything* that
+identifies the box at once — its host key, its `root` login key, and this router
+key. All three files here changed in one commit. The retired values were:
+
+| file | retired key |
+|---|---|
+| `hosts/gateway.pub` | `...IGP4Bibd+28bbFcM9FzwLdzJ9bbsj5PMCcZjeCNU5iyA` |
+| `identities/gateway.pub` | `...INiKLlfdaKc2NZPmZRFj7m7aT5L1dE1s+bTIG5sqgrl8` |
+| `identities/router.pub` | `...ILmHv0OEwVaM/ONVxUJshBbiZIWDm0ynEDJO4I4Ogqj4` |
+| `identities/gateway-deploy.pub` | `...IALcoiAsJlq14tYliCZreWVc/+97QGsRkB4QSWvbV1X0` |
+
+The re-grant is four places, not three, now that `nix-vm` exists:
+`nixos/server/configuration.nix`, `nixos/server/nix-vm/configuration.nix`,
+`nixos/server/win-vm/logon.ps1`, and main-pc's `~/.ssh/authorized_keys`. Until
+each one has it, every `ssh <device>@hackthe.world` fails at the *second* hop —
+which looks like a broken gateway and is not one.
 
 ## hosts/
 
@@ -116,9 +135,14 @@ Two consequences worth knowing:
 - `win-vm` is a rebuildable VM. Reinstalling it generates **new** host keys, so
   `hosts/win-vm.pub` has to be refreshed whenever that happens — and old
   `known_hosts` entries for it will correctly start complaining.
+- `nix-vm` is the same kind of thing: a guest on `server`, rebuilt from
+  `nixos/server/nix-vm/configuration.nix`. Its key could not be published until
+  its first boot generated one, which is why `hosts/nix-vm.pub` only appeared on
+  2026-09-04 — and why `ssh nix-vm@hackthe.world` stopped at "No ED25519 host key
+  is known" until then. That was `StrictHostKeyChecking` working correctly.
 
-`moms-laptop` and `phone` are in the device inventory but not built yet, so they
-have no keys to publish.
+`moms-laptop` is in the device inventory but not built yet, and `phone` is a
+client only — neither has a host key to publish.
 
 ## Filenames are the device name; embedded comments may lag
 
@@ -126,8 +150,12 @@ The filename is authoritative — it is the device's current name. The trailing
 comment *inside* a `.pub` is whatever `ssh-keygen` stamped when the key was
 generated, so after a device rename it still reads the old one:
 `hosts/server.pub` says `root@linux-server`, and `hosts/win-vm.pub` says
-`system@winvm`. The *identity* keys no longer lag: win-vm's was regenerated on
-2026-08-18 and carries the current name.
+`system@winvm`. `hosts/gateway.pub` now says `root@nixos` for a slightly
+different reason — the provider's installer generated it before
+`networking.hostName` had ever been applied, so the box was still called `nixos`
+at the moment the key existed. The *identity* keys no longer lag: win-vm's was
+regenerated on 2026-08-18 and carries the current name, and the gateway's on
+2026-09-04.
 
 That is cosmetic and deliberately left alone. The comment is not part of the
 key, nothing verifies against it, and rewriting a live host key file to correct
